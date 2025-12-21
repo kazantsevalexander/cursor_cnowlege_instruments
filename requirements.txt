@@ -1,0 +1,18 @@
+# OpenAI for embeddings
+openai==1.57.3
+
+# Vector stores
+weaviate-client==4.18.3
+pinecone-client==5.0.1
+relevanceai>=2.0.0
+
+# Utilities
+python-dotenv==1.0.1
+loguru==0.7.3
+tiktoken==0.8.0
+
+# Core dependencies
+# Use --only-binary :all: flag if installing from a path with Cyrillic characters
+numpy
+requests
+
