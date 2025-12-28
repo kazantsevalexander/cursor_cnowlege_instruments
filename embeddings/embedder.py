@@ -11,7 +11,7 @@ from config.settings import settings
 
 class Embedder:
     """
-    Generate embeddings using OpenAI's embedding models.
+    Генерируйте эмбеддинги с помощью моделей эмбеддингов OpenAI.
     """
     
     def __init__(
@@ -20,11 +20,11 @@ class Embedder:
         api_key: str = None
     ):
         """
-        Initialize the Embedder with OpenAI client.
-        
-        Args:
-            model: OpenAI embedding model to use (defaults to settings)
-            api_key: OpenAI API key (defaults to settings)
+        Инициализирует Embedder с клиентом OpenAI.
+
+        Аргументы:
+            model: Модель эмбеддингов OpenAI для использования (по умолчанию из настроек)
+            api_key: Ключ API OpenAI (по умолчанию из настроек)
         """
         self.model = model or settings.EMBEDDING_MODEL
         self.api_key = api_key or settings.OPENAI_API_KEY
@@ -36,15 +36,15 @@ class Embedder:
         logger.info(f"Initialized Embedder with model: {self.model}")
     
     def embed_text(self, text: str) -> List[float]:
-        """
-        Generate embedding for a single text.
-        
-        Args:
-            text: The text to embed
-            
-        Returns:
-            List of float values representing the embedding vector
-        """
+    """
+    Генерирует эмбеддинг для одного текста.
+
+    Аргументы:
+        text: Текст для создания эмбеддинга
+
+    Возвращает:
+        Список значений float, представляющих вектор эмбеддинга
+    """
         if not text or not text.strip():
             logger.warning("Empty text provided for embedding")
             return []
@@ -63,15 +63,15 @@ class Embedder:
             raise
     
     def embed_batch(self, texts: List[str]) -> List[List[float]]:
-        """
-        Generate embeddings for a batch of texts.
-        
-        Args:
-            texts: List of texts to embed
-            
-        Returns:
-            List of embedding vectors
-        """
+    """
+    Генерирует эмбеддинги для пакета текстов.
+
+    Аргументы:
+        texts: Список текстов для получения эмбеддингов
+
+    Возвращает:
+        Список векторов эмбеддингов
+    """
         if not texts:
             logger.warning("Empty text list provided for batch embedding")
             return []
@@ -100,10 +100,11 @@ class Embedder:
     
     def get_embedding_dimension(self) -> int:
         """
-        Get the dimension of embeddings produced by the current model.
-        
-        Returns:
-            Dimension of the embedding vector
+        Получить размерность эмбеддингов, производимых текущей моделью.
+
+        Возвращает:
+            Размерность вектора эмбеддинга
+
         """
         # Known dimensions for OpenAI models
         model_dimensions = {
