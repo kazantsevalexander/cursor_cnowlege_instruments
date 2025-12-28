@@ -108,7 +108,7 @@ class Retriever:
         self,
         query: str,
         store_type: StoreType,
-        top_k: int = 5,
+        top_k: int = 8,
         filter_dict: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
@@ -157,7 +157,7 @@ class Retriever:
             Dictionary mapping store type to results
         """
         if stores is None:
-            stores = ["pinecone", "weaviate", "relevance"]
+            stores = ["pinecone", "weaviate"]
         
         results = {}
         
@@ -208,6 +208,69 @@ class Retriever:
                 print(f"      Text: {text_preview}")
         
         print("\n" + "=" * 80 + "\n")
+    
+    def clear_store(self, store_type: StoreType) -> None:
+        """
+        Clear all data from a specific vector store.
+        
+        Args:
+            store_type: Which store to clear
+        """
+        try:
+            store = self._get_store(store_type)
+            
+            logger.info(f"Clearing all data from {store_type}")
+            
+            if store_type == "pinecone":
+                store.delete_index()
+            elif store_type == "weaviate":
+                store.delete_schema()
+            elif store_type == "relevance":
+                store.delete_collection()
+            
+            # Remove from cache to force re-initialization
+            if store_type in self._stores:
+                del self._stores[store_type]
+            
+            logger.info(f"Successfully cleared {store_type}")
+        
+        except Exception as e:
+            logger.error(f"Error clearing {store_type}: {e}")
+            raise
+    
+    def clear_all_stores(self) -> None:
+        """Clear all data from all vector stores."""
+        stores = ["pinecone", "weaviate", "relevance"]
+        
+        for store_type in stores:
+            try:
+                self.clear_store(store_type)
+            except Exception as e:
+                logger.warning(f"Could not clear {store_type}: {e}")
+    
+    def replace_knowledge_base(
+        self,
+        texts: List[str],
+        store_type: StoreType,
+        metadata: List[Dict[str, Any]] = None
+    ) -> None:
+        """
+        Replace all data in a store with new documents.
+        
+        Args:
+            texts: New document texts
+            store_type: Which store to update
+            metadata: Optional metadata for each document
+        """
+        logger.info(f"Replacing knowledge base in {store_type}")
+        
+        # Clear existing data
+        self.clear_store(store_type)
+        
+        # Add new documents
+        self.add_documents(texts, store_type, metadata)
+        
+        logger.info(f"Knowledge base replaced in {store_type}")
     
     def cleanup(self) -> None:
         """Clean up all store connections."""

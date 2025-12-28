@@ -17,36 +17,51 @@ from rag.retriever import Retriever
 from embeddings.embedder import Embedder
 
 
-def load_file(file_path: str) -> list[str]:
+def load_all_files(knowledge_dir: Path) -> tuple[list[str], list[dict]]:
     """
-    Загружает файл и разбивает на абзацы.
+    Загружает все .txt файлы из папки и возвращает абзацы с метаданными.
     
     Args:
-        file_path: Путь к файлу
+        knowledge_dir: Путь к папке с файлами
         
     Returns:
-        Список абзацев
+        Кортеж (список абзацев, список метаданных)
     """
-    print(f"\n📂 Загрузка файла: {file_path}")
+    txt_files = list(knowledge_dir.glob("*.txt"))
     
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
+    if not txt_files:
+        return [], []
     
-    # Разбиваем на абзацы (по двойным переносам строк)
-    paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
+    all_paragraphs = []
+    all_metadata = []
     
-    print(f"✅ Загружено {len(paragraphs)} абзацев")
-    print(f"📊 Общий размер: {len(content)} символов\n")
+    for txt_file in txt_files:
+        print(f"  📄 {txt_file.name}...", end=" ")
+        
+        with open(txt_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
+        
+        for i, para in enumerate(paragraphs):
+            all_paragraphs.append(para)
+            all_metadata.append({
+                "source": txt_file.name,
+                "paragraph_id": i
+            })
+        
+        print(f"{len(paragraphs)} абзацев")
     
-    return paragraphs
+    return all_paragraphs, all_metadata
 
 
-def create_embeddings_and_store(paragraphs: list[str], retriever: Retriever):
+def create_embeddings_and_store(paragraphs: list[str], metadata: list[dict], retriever: Retriever):
     """
     Создает эмбеддинги и сохраняет в векторные БД.
     
     Args:
         paragraphs: Список текстов для обработки
+        metadata: Список метаданных для каждого абзаца
         retriever: RAG retriever
     """
     print("=" * 80)
@@ -54,7 +69,7 @@ def create_embeddings_and_store(paragraphs: list[str], retriever: Retriever):
     print("=" * 80 + "\n")
     
     # Список векторных БД для использования
-    stores = ["pinecone", "weaviate", "relevance"]
+    stores = ["pinecone", "weaviate"]
     
     for store_type in stores:
         try:
@@ -65,8 +80,7 @@ def create_embeddings_and_store(paragraphs: list[str], retriever: Retriever):
             retriever.add_documents(
                 texts=paragraphs,
                 store_type=store_type,
-                metadata=[{"paragraph_id": i, "source": "test_data.txt"} 
-                         for i in range(len(paragraphs))]
+                metadata=metadata
             )
             
             print(f"   ✅ {store_type.upper()}: {len(paragraphs)} документов успешно добавлено\n")
@@ -90,7 +104,7 @@ def test_query(query: str, retriever: Retriever, top_k: int = 3):
     
     print(f"❓ ЗАПРОС: {query}\n")
     
-    stores = ["pinecone", "weaviate", "relevance"]
+    stores = ["pinecone", "weaviate"]
     
     for store_type in stores:
         try:
@@ -178,12 +192,31 @@ def main():
     print("  🧪 ТЕСТИРОВАНИЕ RAG СИСТЕМЫ")
     print("█" * 80 + "\n")
     
-    # Файл с тестовыми данными
-    test_file = "test_data.txt"
+    # Папка с файлами базы знаний
+    knowledge_dir = Path(__file__).parent / "knowledge"
     
     try:
-        # 1. Загружаем файл
-        paragraphs = load_file(test_file)
+        # 1. Загружаем все файлы из папки knowledge/
+        if not knowledge_dir.exists():
+            print(f"❌ Папка '{knowledge_dir}' не найдена!")
+            print(f"   Создайте папку knowledge/ и поместите туда .txt файлы.\n")
+            return
+        
+        txt_files = list(knowledge_dir.glob("*.txt"))
+        if not txt_files:
+            print(f"❌ В папке '{knowledge_dir}' нет .txt файлов!")
+            return
+        
+        print(f"📂 Найдено {len(txt_files)} файлов в knowledge/\n")
+        
+        # Загружаем все файлы
+        paragraphs, metadata = load_all_files(knowledge_dir)
+        
+        if not paragraphs:
+            print("❌ Не удалось загрузить абзацы из файлов!")
+            return
+        
+        print(f"\n📊 Всего загружено: {len(paragraphs)} абзацев\n")
         
         # Выводим превью первого абзаца
         print("📄 Превью первого абзаца:")
@@ -195,14 +228,18 @@ def main():
         print("✅ RAG система инициализирована\n")
         
         # 3. Создаем эмбеддинги и отправляем в БД
-        create_embeddings_and_store(paragraphs, retriever)
+        create_embeddings_and_store(paragraphs, metadata, retriever)
         
         # 4. Тестовые запросы
         test_queries = [
-            "Что такое машинное обучение?",
-            "Расскажи про Python",
-            "Как работает RAG система?",
-            "Что такое эмбеддинги?"
+            "К какому классу сложности относится здание высотой 35 метров?",
+            "Что относится к зданиям первого класса сложности К-1?",
+            "Какой класс сложности у подстанций напряжением 110 кВ?",
+            "К какому классу относятся мосты длиной более 100 метров?",
+            "Что входит в здания и сооружения третьего класса сложности?",
+            "Какой класс сложности у одноквартирного жилого дома до 7 метров?",
+            "К какому классу относятся производственные здания площадью 6000 м2?",
+            "Чем отличается К-2 от К-3 по типам объектов?"
         ]
         
         # Выполняем первый запрос детально
@@ -241,9 +278,9 @@ def main():
         
         retriever.cleanup()
         
-    except FileNotFoundError:
-        print(f"❌ Ошибка: Файл '{test_file}' не найден!")
-        print(f"   Создайте файл {test_file} с тестовыми данными.\n")
+    except FileNotFoundError as e:
+        print(f"❌ Ошибка: {e}")
+        print(f"   Поместите .txt файлы в папку knowledge/\n")
         
     except Exception as e:
         print(f"\n❌ Ошибка: {e}\n")

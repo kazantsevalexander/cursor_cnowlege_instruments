@@ -36,12 +36,11 @@ class Settings:
     
     @classmethod
     def validate(cls) -> bool:
+        """ Проверяет наличие всех обязательных значений конфигурации. 
+        Возвращает: bool: True, если все обязательные настройки присутствуют, 
+        иначе False. 
         """
-        Validate that all required configuration values are present.
-        
-        Returns:
-            bool: True if all required settings are present, False otherwise.
-        """
+
         required_fields = {
             "OPENAI_API_KEY": cls.OPENAI_API_KEY,
             "PINECONE_API_KEY": cls.PINECONE_API_KEY,
@@ -64,7 +63,7 @@ class Settings:
     
     @classmethod
     def print_config(cls) -> None:
-        """Print current configuration (without exposing sensitive data)."""
+        """Вывести текущую конфигурацию (без раскрытия конфиденциальных данных)."""
         print("=" * 60)
         print("RAG Vector Demo - Configuration")
         print("=" * 60)

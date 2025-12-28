@@ -41,7 +41,7 @@ class WeaviateStore:
         # Initialize Weaviate client
         try:
             if self.api_key:
-                self.client = weaviate.connect_to_wcs(
+                self.client = weaviate.connect_to_weaviate_cloud(
                     cluster_url=self.url,
                     auth_credentials=weaviate.auth.AuthApiKey(self.api_key)
                 )
